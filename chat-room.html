@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sohbet Odası</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-light: #f8f9fa;
+            --bg-card: #ffffff;
+            --accent: #2196F3;
+            --accent-hover: #1976D2;
+            --accent-light: #E3F2FD;
+            --text-primary: #212121;
+            --text-dim: #757575;
+            --border: #e0e0e0;
+            --message-bg: #f5f5f5;
+            --message-own: #E3F2FD;
+            --error: #f44336;
+            --success: #4CAF50;
+            --shadow: rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-light);
+            color: var(--text-primary);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -10%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(33, 150, 243, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -10%;
+            left: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(33, 150, 243, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Home Screen */
+        #homeScreen {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .home-content {
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        button {
+            flex: 1;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: 2px solid var(--border);
+            background: white;
+            color: var(--text-primary);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'DM Sans', sans-serif;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+            border-color: var(--accent);
+        }
+
+        button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        button.primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 4px 16px rgba(33, 150, 243, 0.3);
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        input::placeholder {
+            color: var(--text-dim);
+            letter-spacing: normal;
+        }
+
+        .generated-code {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            letter-spacing: 4px;
+            margin: 1rem 0;
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+        }
+
+        /* Chat Screen */
+        #chatScreen {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .chat-header {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 12px var(--shadow);
+        }
+
+        .room-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .room-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            color: var(--accent);
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        .user-count {
+            background: var(--message-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .messages-container {
+            flex: 1;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 0 2px 12px var(--shadow);
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            animation: messageSlide 0.3s ease-out;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.own {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            color: white;
+        }
+
+        .message-content {
+            flex: 1;
+            max-width: 70%;
+        }
+
+        .message-header {
+            display: flex;
+            gap: 0.5rem;
+            align-items: baseline;
+            margin-bottom: 0.25rem;
+        }
+
+        .message-name {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .message-bubble {
+            background: var(--message-bg);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            word-wrap: break-word;
+        }
+
+        .message.own .message-bubble {
+            background: var(--message-own);
+            border: 1px solid var(--accent);
+        }
+
+        .message-image {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .message-image:hover {
+            transform: scale(1.02);
+        }
+
+        .input-area {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            box-shadow: 0 2px 12px var(--shadow);
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        #messageInput {
+            width: 100%;
+            padding: 1rem;
+            padding-right: 3rem;
+            background: var(--bg-light);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            resize: none;
+            max-height: 150px;
+            font-family: 'DM Sans', sans-serif;
+            text-align: left;
+        }
+
+        #messageInput:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: white;
+        }
+
+        .attach-btn {
+            position: absolute;
+            right: 0.5rem;
+            bottom: 0.5rem;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        #sendBtn {
+            width: 120px;
+            padding: 1rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Image Preview */
+        .image-preview {
+            position: relative;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+
+        .image-preview img {
+            max-width: 200px;
+            max-height: 150px;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+        }
+
+        .image-preview .remove-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border-radius: 50%;
+            background: var(--error);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        /* Modal for image viewing */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-light);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Home Screen -->
+        <div id="homeScreen">
+            <div class="home-content">
+                <div class="logo">💬</div>
+                <h1>Sohbet Odası</h1>
+                <p class="subtitle">Kod ile anlık sohbet et, resim paylaş</p>
+                
+                <div id="mainActions">
+                    <div class="action-buttons">
+                        <button class="primary" onclick="createRoom()">Oda Oluştur</button>
+                        <button onclick="showJoinRoom()">Odaya Katıl</button>
+                    </div>
+                </div>
+
+                <div id="createRoomView" class="hidden">
+                    <div class="generated-code" id="generatedCode"></div>
+                    <p style="color: var(--text-dim); margin-bottom: 1rem;">Bu kodu arkadaşlarınla paylaş!</p>
+                    <div class="input-group">
+                        <input type="text" id="creatorName" placeholder="Adınızı girin" maxlength="20">
+                    </div>
+                    <div class="action-buttons">
+                        <button class="primary" onclick="joinAsCreator()">Sohbete Başla</button>
+                        <button onclick="cancelCreate()">İptal</button>
+                    </div>
+                </div>
+
+                <div id="joinRoomView" class="hidden">
+                    <div class="input-group">
+                        <input type="text" id="roomCodeInput" placeholder="ODA KODU" maxlength="6" style="text-transform: uppercase;">
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="joinerName" placeholder="Adınızı girin" maxlength="20">
+                    </div>
+                    <div class="action-buttons">
+                        <button class="primary" onclick="joinRoom()">Katıl</button>
+                        <button onclick="cancelJoin()">İptal</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Screen -->
+        <div id="chatScreen">
+            <div class="chat-header">
+                <div class="room-info">
+                    <div class="room-code" id="roomCodeDisplay"></div>
+                    <div class="user-count" id="userCount">👥 1 kişi</div>
+                </div>
+                <button onclick="leaveRoom()">Çıkış</button>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <!-- Messages will be added here -->
+            </div>
+
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea id="messageInput" placeholder="Mesajınızı yazın..." rows="1"></textarea>
+                    <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+                    <button class="attach-btn" onclick="document.getElementById('imageInput').click()">📎</button>
+                </div>
+                <button class="primary" id="sendBtn" onclick="sendMessage()">Gönder</button>
+            </div>
+            <div id="imagePreviewContainer"></div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal" id="imageModal" onclick="closeModal()">
+        <img id="modalImage" src="" alt="">
+    </div>
+
+    <script>
+        // State management
+        let currentRoom = null;
+        let currentUser = null;
+        let selectedImage = null;
+        let messages = {};
+        let roomUsers = {};
+
+        // Initialize storage
+        async function initStorage() {
+            try {
+                // Try to load existing data
+                const roomsData = await window.storage.get('rooms', true);
+                if (!roomsData) {
+                    await window.storage.set('rooms', JSON.stringify({}), true);
+                }
+            } catch (error) {
+                console.log('Initializing storage...');
+            }
+        }
+
+        initStorage();
+
+        // Generate random room code
+        function generateRoomCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        // Create room
+        async function createRoom() {
+            const code = generateRoomCode();
+            document.getElementById('generatedCode').textContent = code;
+            document.getElementById('mainActions').classList.add('hidden');
+            document.getElementById('createRoomView').classList.remove('hidden');
+            
+            // Store room in shared storage
+            try {
+                const roomData = {
+                    code: code,
+                    created: Date.now(),
+                    users: []
+                };
+                await window.storage.set(`room:${code}`, JSON.stringify(roomData), true);
+                await window.storage.set(`messages:${code}`, JSON.stringify([]), true);
+            } catch (error) {
+                console.error('Room creation error:', error);
+            }
+        }
+
+        function showJoinRoom() {
+            document.getElementById('mainActions').classList.add('hidden');
+            document.getElementById('joinRoomView').classList.remove('hidden');
+        }
+
+        function cancelCreate() {
+            document.getElementById('mainActions').classList.remove('hidden');
+            document.getElementById('createRoomView').classList.add('hidden');
+        }
+
+        function cancelJoin() {
+            document.getElementById('mainActions').classList.remove('hidden');
+            document.getElementById('joinRoomView').classList.add('hidden');
+        }
+
+        // Join as creator
+        async function joinAsCreator() {
+            const name = document.getElementById('creatorName').value.trim();
+            const code = document.getElementById('generatedCode').textContent;
+            
+            if (!name) {
+                alert('Lütfen bir ad girin');
+                return;
+            }
+
+            currentRoom = code;
+            currentUser = { name, id: Date.now().toString() };
+            
+            await addUserToRoom(code, currentUser);
+            showChatScreen();
+            startMessagePolling();
+        }
+
+        // Join existing room
+        async function joinRoom() {
+            const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            const name = document.getElementById('joinerName').value.trim();
+            
+            if (!code || !name) {
+                alert('Lütfen oda kodu ve adınızı girin');
+                return;
+            }
+
+            // Check if room exists
+            try {
+                const roomData = await window.storage.get(`room:${code}`, true);
+                if (!roomData) {
+                    alert('Oda bulunamadı. Kod doğru mu kontrol edin.');
+                    return;
+                }
+
+                currentRoom = code;
+                currentUser = { name, id: Date.now().toString() };
+                
+                await addUserToRoom(code, currentUser);
+                showChatScreen();
+                startMessagePolling();
+            } catch (error) {
+                alert('Oda bulunamadı. Kod doğru mu kontrol edin.');
+            }
+        }
+
+        // Add user to room
+        async function addUserToRoom(code, user) {
+            try {
+                const roomData = await window.storage.get(`room:${code}`, true);
+                if (roomData) {
+                    const room = JSON.parse(roomData.value);
+                    const existingUser = room.users.find(u => u.id === user.id);
+                    if (!existingUser) {
+                        room.users.push(user);
+                        await window.storage.set(`room:${code}`, JSON.stringify(room), true);
+                    }
+                }
+            } catch (error) {
+                console.error('Error adding user:', error);
+            }
+        }
+
+        // Show chat screen
+        function showChatScreen() {
+            document.getElementById('homeScreen').style.display = 'none';
+            document.getElementById('chatScreen').style.display = 'flex';
+            document.getElementById('roomCodeDisplay').textContent = currentRoom;
+            updateUserCount();
+        }
+
+        // Update user count
+        async function updateUserCount() {
+            try {
+                const roomData = await window.storage.get(`room:${currentRoom}`, true);
+                if (roomData) {
+                    const room = JSON.parse(roomData.value);
+                    const count = room.users.length;
+                    document.getElementById('userCount').textContent = `👥 ${count} kişi`;
+                }
+            } catch (error) {
+                document.getElementById('userCount').textContent = '👥 1 kişi';
+            }
+        }
+
+        // Handle image selection
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedImage = e.target.result;
+                    showImagePreview(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Show image preview
+        function showImagePreview(dataUrl) {
+            const container = document.getElementById('imagePreviewContainer');
+            container.innerHTML = `
+                <div class="image-preview">
+                    <img src="${dataUrl}" alt="Preview">
+                    <button class="remove-btn" onclick="removeImage()">×</button>
+                </div>
+            `;
+        }
+
+        // Remove image
+        function removeImage() {
+            selectedImage = null;
+            document.getElementById('imagePreviewContainer').innerHTML = '';
+            document.getElementById('imageInput').value = '';
+        }
+
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (!text && !selectedImage) return;
+
+            const message = {
+                id: Date.now().toString(),
+                userId: currentUser.id,
+                userName: currentUser.name,
+                text: text,
+                image: selectedImage,
+                timestamp: Date.now()
+            };
+
+            // Save to storage
+            try {
+                const messagesData = await window.storage.get(`messages:${currentRoom}`, true);
+                let messagesList = [];
+                if (messagesData) {
+                    messagesList = JSON.parse(messagesData.value);
+                }
+                messagesList.push(message);
+                await window.storage.set(`messages:${currentRoom}`, JSON.stringify(messagesList), true);
+                
+                // Clear input
+                input.value = '';
+                removeImage();
+                
+                // Load messages immediately
+                await loadMessages();
+            } catch (error) {
+                console.error('Send message error:', error);
+            }
+        }
+
+        // Load messages
+        async function loadMessages() {
+            try {
+                const messagesData = await window.storage.get(`messages:${currentRoom}`, true);
+                if (messagesData) {
+                    const messagesList = JSON.parse(messagesData.value);
+                    displayMessages(messagesList);
+                }
+            } catch (error) {
+                console.log('No messages yet');
+            }
+        }
+
+        // Display messages
+        function displayMessages(messagesList) {
+            const container = document.getElementById('messagesContainer');
+            const shouldScroll = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+            
+            container.innerHTML = messagesList.map(msg => {
+                const isOwn = msg.userId === currentUser.id;
+                const time = new Date(msg.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                const initial = msg.userName.charAt(0).toUpperCase();
+                
+                return `
+                    <div class="message ${isOwn ? 'own' : ''}">
+                        <div class="message-avatar">${initial}</div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-name">${msg.userName}</span>
+                                <span class="message-time">${time}</span>
+                            </div>
+                            <div class="message-bubble">
+                                ${msg.text}
+                                ${msg.image ? `<img src="${msg.image}" class="message-image" onclick="showImageModal('${msg.image}')" alt="Shared image">` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            if (shouldScroll) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // Start polling for new messages
+        let pollingInterval;
+        function startMessagePolling() {
+            loadMessages();
+            updateUserCount();
+            
+            pollingInterval = setInterval(() => {
+                loadMessages();
+                updateUserCount();
+            }, 2000);
+        }
+
+        // Show image modal
+        function showImageModal(src) {
+            document.getElementById('modalImage').src = src;
+            document.getElementById('imageModal').classList.add('active');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('imageModal').classList.remove('active');
+        }
+
+        // Leave room
+        function leaveRoom() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+            
+            currentRoom = null;
+            currentUser = null;
+            selectedImage = null;
+            
+            document.getElementById('chatScreen').style.display = 'none';
+            document.getElementById('homeScreen').style.display = 'flex';
+            document.getElementById('mainActions').classList.remove('hidden');
+            document.getElementById('createRoomView').classList.add('hidden');
+            document.getElementById('joinRoomView').classList.add('hidden');
+            
+            // Clear inputs
+            document.getElementById('roomCodeInput').value = '';
+            document.getElementById('joinerName').value = '';
+            document.getElementById('creatorName').value = '';
+        }
+
+        // Enter key to send
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageInput = document.getElementById('messageInput');
+            
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Auto-resize textarea
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+            });
+        });
+    </script>
+</body>
+</html>
